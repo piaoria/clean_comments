@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "clean_comments",
+  "description": "Blur harmful YouTube comments using Chrome Built-in AI with a rule-based fallback.",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "clean_comments",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": [
+        "src/rules.js",
+        "src/classifier.js",
+        "src/content.js"
+      ],
+      "css": ["src/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["https://www.youtube.com/*"]
+}
