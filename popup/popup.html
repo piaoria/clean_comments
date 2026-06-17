@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,16 +10,56 @@
     <main class="popup">
       <header>
         <h1>clean_comments</h1>
-        <p>YouTube 댓글 흐림 필터</p>
+        <p>YouTube comment filter</p>
       </header>
+
+      <section class="panel">
+        <h2>Filtered comment style</h2>
+        <div class="segmented" role="radiogroup" aria-label="Filtered comment style">
+          <label>
+            <input type="radio" name="moderationMode" value="blur">
+            <span>Blur</span>
+          </label>
+          <label>
+            <input type="radio" name="moderationMode" value="blind">
+            <span>Blind</span>
+          </label>
+          <label>
+            <input type="radio" name="moderationMode" value="dim">
+            <span>Dim</span>
+          </label>
+        </div>
+      </section>
 
       <label class="setting">
         <span>
-          <strong>디버그 배지</strong>
-          <small>분류 이유를 댓글 옆에 표시</small>
+          <strong>Debug badge</strong>
+          <small>Show label, source, confidence, and reason</small>
         </span>
         <input id="showDebugBadges" type="checkbox" role="switch">
       </label>
+
+      <section class="status" aria-live="polite">
+        <h2>Status</h2>
+        <dl>
+          <div>
+            <dt>AI</dt>
+            <dd id="aiStatus">Not checked</dd>
+          </div>
+          <div>
+            <dt>Classified</dt>
+            <dd id="classificationStatus">0</dd>
+          </div>
+          <div>
+            <dt>Fallback</dt>
+            <dd id="fallbackStatus">0</dd>
+          </div>
+          <div>
+            <dt>Last</dt>
+            <dd id="lastStatus">None</dd>
+          </div>
+        </dl>
+      </section>
     </main>
 
     <script src="popup.js"></script>

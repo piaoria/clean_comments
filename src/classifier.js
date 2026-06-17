@@ -11,16 +11,37 @@
   ].join(" ");
 
   let sessionPromise = null;
+  const status = {
+    promptApiDetected: false,
+    promptApiAvailability: "unchecked",
+    promptApiSessionReady: false,
+    promptApiLastError: "",
+    lastSource: "none",
+    lastUpdatedAt: ""
+  };
+
+  function updateStatus(patch) {
+    Object.assign(status, patch, {
+      lastUpdatedAt: new Date().toISOString()
+    });
+  }
 
   function getLanguageModelApi() {
     if (global.LanguageModel) {
+      updateStatus({ promptApiDetected: true });
       return global.LanguageModel;
     }
 
     if (global.ai && global.ai.languageModel) {
+      updateStatus({ promptApiDetected: true });
       return global.ai.languageModel;
     }
 
+    updateStatus({
+      promptApiDetected: false,
+      promptApiAvailability: "missing",
+      promptApiSessionReady: false
+    });
     return null;
   }
 
@@ -31,14 +52,17 @@
 
     if (typeof api.availability === "function") {
       const availability = await api.availability();
+      updateStatus({ promptApiAvailability: String(availability) });
       return availability === "available" || availability === "readily";
     }
 
     if (typeof api.capabilities === "function") {
       const capabilities = await api.capabilities();
+      updateStatus({ promptApiAvailability: String(capabilities.available || "unknown") });
       return capabilities.available === "readily" || capabilities.available === "after-download";
     }
 
+    updateStatus({ promptApiAvailability: "create_only" });
     return typeof api.create === "function";
   }
 
@@ -48,13 +72,22 @@
     }
 
     try {
-      return await api.create({
+      const session = await api.create({
         systemPrompt: SYSTEM_PROMPT,
         temperature: 0,
         topK: 1
       });
+      updateStatus({
+        promptApiSessionReady: true,
+        promptApiLastError: ""
+      });
+      return session;
     } catch (error) {
       console.info("[clean_comments] Prompt API session unavailable:", error);
+      updateStatus({
+        promptApiSessionReady: false,
+        promptApiLastError: String(error?.message || error)
+      });
       return null;
     }
   }
@@ -64,7 +97,12 @@
       sessionPromise = (async () => {
         const api = getLanguageModelApi();
         const available = await isPromptApiAvailable(api);
-        return available ? createSession(api) : null;
+        if (!available) {
+          updateStatus({ promptApiSessionReady: false });
+          return null;
+        }
+
+        return createSession(api);
       })();
     }
 
@@ -102,7 +140,9 @@
     ].join("\n");
 
     const response = await session.prompt(prompt);
-    return parseAiResponse(response);
+    const result = parseAiResponse(response);
+    updateStatus({ lastSource: result.source });
+    return result;
   }
 
   async function classifyComment(text) {
@@ -115,11 +155,17 @@
       console.info("[clean_comments] Falling back to rules:", error);
     }
 
-    return classifyByRules(text);
+    const fallbackResult = classifyByRules(text);
+    updateStatus({ lastSource: fallbackResult.source });
+    return fallbackResult;
+  }
+
+  function getClassifierStatus() {
+    return { ...status };
   }
 
   global.CleanCommentsClassifier = {
-    classifyComment
+    classifyComment,
+    getClassifierStatus
   };
 })(globalThis);
-

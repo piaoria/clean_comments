@@ -19,8 +19,10 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 - Watches newly loaded YouTube comments.
 - Classifies comment text with Chrome Built-in AI when possible.
 - Falls back to rule-based filtering.
-- Blurs comments classified as harmful.
-- Provides a popup setting to show or hide debug badges next to blurred comments.
+- Filters harmful comments with a user-selected style: blur, blind, or dim.
+- Immediately filters high-confidence rule matches, while ambiguous comments stay visible during async AI review.
+- Provides a popup setting to show or hide debug badges next to filtered comments.
+- Shows Prompt API availability, AI/rule fallback counts, and last classification in the popup.
 - Marks processed comments with `data-clean-comments-*` attributes for debugging.
 
 ## Project Structure
@@ -50,6 +52,14 @@ src/
 ## Built-in AI Note
 
 Chrome Built-in AI and the Prompt API may require a compatible Chrome version, local model availability, and browser settings or flags. The code checks for both the current `LanguageModel` style API and older experimental `ai.languageModel` style API before using the fallback classifier.
+
+## Security Notes
+
+- Comment text is classified locally in the browser by Chrome Built-in AI or local rules.
+- The extension does not send comment text to an external server.
+- Popup status stores counters and the last label/source/reason, not raw comment text.
+- DOM labels and badges use `textContent`, not HTML injection.
+- User settings are validated before they affect CSS class names.
 
 ## Design Principles
 
