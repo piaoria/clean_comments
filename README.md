@@ -27,6 +27,7 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 - Filters harmful comments with a user-selected style: blur, blind, or dim.
 - Provides a tabbed popup with general settings, label-specific behavior, custom words, and live status.
 - Lets users enable or disable filtering per label and choose blur, blind, or dim per label.
+- Shows a popup status dashboard with processed, safe, filtered, pending, queue, batch, source, and label counts.
 - Keeps casual Korean reactions like repeated laughter or crying expressions out of the default meaningless filter.
 - Immediately filters high-confidence rule matches, while ambiguous comments stay visible during async AI review.
 - Provides a popup setting to show or hide debug badges next to filtered comments.

@@ -18,6 +18,7 @@
 - Added Prompt API timeout handling and low-confidence harmful result fallback.
 - Added batched Prompt API classification for ambiguous comments and individual reply comment processing.
 - Localized popup settings and status labels to Korean.
+- Expanded the popup status tab into a debugging dashboard with queue, batch, source, and label counters.
 - Added extension icon assets and manifest icon declarations.
 - Added lightweight Node regression tests for rules, Prompt API fallback, and popup template encoding.
 - Replaced corrupted popup starter template strings with stable escaped Korean terms.

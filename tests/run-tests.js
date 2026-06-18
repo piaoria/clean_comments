@@ -76,6 +76,9 @@ async function run() {
   const popupSource = fs.readFileSync("popup/popup.js", "utf8");
   assert(!/[�]|湲\?|遺|諛|蹂묒|硫/.test(popupSource), "popup templates contain corrupted text");
 
+  const popupHtml = fs.readFileSync("popup/popup.html", "utf8");
+  assert(!/[�]|湲\?|遺|諛|蹂묒|硫|&#[^0-9x]/.test(popupHtml), "popup HTML contains corrupted text");
+
   console.log("All tests passed");
 }
 

@@ -1,5 +1,5 @@
 (function runContentScript(global, document) {
-  const { HARMFUL_LABELS, classifyByRules } = global.CleanCommentsRules;
+  const { LABELS, HARMFUL_LABELS, classifyByRules } = global.CleanCommentsRules;
   const { classifyCommentsBatch, getClassifierStatus } = global.CleanCommentsClassifier;
 
   const COMMENT_SELECTOR = "ytd-comment-renderer, ytd-comment-view-model";
@@ -43,6 +43,13 @@
 
   const queue = [];
   const queuedComments = new WeakSet();
+  function createLabelCounts() {
+    return Object.values(LABELS).reduce((counts, label) => {
+      counts[label] = 0;
+      return counts;
+    }, {});
+  }
+
   const status = {
     totalProcessed: 0,
     promptApiClassifications: 0,
@@ -51,6 +58,20 @@
     pendingClassifications: 0,
     harmfulFiltered: 0,
     safeComments: 0,
+    labels: createLabelCounts(),
+    filteredLabels: createLabelCounts(),
+    seenComments: 0,
+    retryCount: 0,
+    queueLength: 0,
+    isProcessing: false,
+    currentBatchSize: 0,
+    batchesProcessed: 0,
+    lastBatchSize: 0,
+    lastBatchDurationMs: 0,
+    lastBatchStartedAt: "",
+    lastBatchCompletedAt: "",
+    lastScanAt: "",
+    lastEnqueuedAt: "",
     lastLabel: "none",
     lastSource: "none",
     lastReason: "",
@@ -219,6 +240,8 @@
       return;
     }
 
+    status.queueLength = queue.length;
+    status.isProcessing = isProcessing;
     global.clearTimeout(statusWriteTimer);
     statusWriteTimer = global.setTimeout(() => {
       void chrome.storage.local.set({
@@ -235,6 +258,7 @@
     status.lastReason = result.reason;
     status.lastUpdatedAt = new Date().toISOString();
     status.classifier = getClassifierStatus();
+    status.labels[result.label] = Number(status.labels[result.label] || 0) + 1;
 
     if (result.source === "prompt_api") {
       status.promptApiClassifications += 1;
@@ -246,6 +270,7 @@
 
     if (shouldFilterLabel(result.label)) {
       status.harmfulFiltered += 1;
+      status.filteredLabels[result.label] = Number(status.filteredLabels[result.label] || 0) + 1;
     } else {
       status.safeComments += 1;
     }
@@ -340,6 +365,8 @@
       applyResult(commentNode, result);
       recordResult(result);
     });
+
+    scheduleStatusWrite();
   }
 
   async function processQueue() {
@@ -348,6 +375,7 @@
     }
 
     isProcessing = true;
+    scheduleStatusWrite();
 
     try {
       while (queue.length > 0) {
@@ -357,11 +385,24 @@
           continue;
         }
 
+        const startedAt = Date.now();
+        status.currentBatchSize = batch.length;
+        status.lastBatchSize = batch.length;
+        status.lastBatchStartedAt = new Date(startedAt).toISOString();
+        scheduleStatusWrite();
+
         const results = await classifyCommentsBatch(batch.map((item) => item.text));
         applyBatchResults(batch, results);
+        status.batchesProcessed += 1;
+        status.currentBatchSize = 0;
+        status.lastBatchCompletedAt = new Date().toISOString();
+        status.lastBatchDurationMs = Date.now() - startedAt;
+        scheduleStatusWrite();
       }
     } finally {
       isProcessing = false;
+      status.currentBatchSize = 0;
+      scheduleStatusWrite();
     }
   }
 
@@ -372,6 +413,9 @@
 
     queuedComments.add(commentNode);
     queue.push(commentNode);
+    status.seenComments += 1;
+    status.lastEnqueuedAt = new Date().toISOString();
+    scheduleStatusWrite();
     void processQueue();
   }
 
@@ -382,10 +426,14 @@
     }
 
     commentNode.setAttribute(TEXT_RETRY_ATTR, String(retries + 1));
+    status.retryCount += 1;
+    scheduleStatusWrite();
     global.setTimeout(() => enqueueComment(commentNode), TEXT_RETRY_DELAY_MS);
   }
 
   function scanComments(root = document) {
+    status.lastScanAt = new Date().toISOString();
+    scheduleStatusWrite();
     root.querySelectorAll(COMMENT_SELECTOR).forEach(enqueueComment);
   }
 

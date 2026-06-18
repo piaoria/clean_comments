@@ -222,9 +222,82 @@ input[role="switch"] {
   border-top: 1px solid #dadce0;
 }
 
+.status-dashboard {
+  padding-top: 10px;
+  border-top: 1px solid #dadce0;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metric {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+}
+
+.metric span,
+.metric strong {
+  display: block;
+}
+
+.metric span {
+  color: #5f6368;
+  font-size: 11px;
+}
+
+.metric strong {
+  margin-top: 2px;
+  font-size: 17px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.status-section {
+  margin-top: 12px;
+}
+
+.status-section p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-list {
+  display: grid;
+  gap: 5px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+  border-bottom: 1px solid #eef0f1;
+}
+
+.status-row span {
+  min-width: 0;
+  color: #5f6368;
+  overflow-wrap: anywhere;
+}
+
+.status-row strong {
+  flex: 0 0 auto;
+}
+
 h2 {
   margin: 0 0 8px;
   font-size: 13px;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
 }
 
 dl {
@@ -256,6 +329,8 @@ dd {
 
   p,
   dt,
+  .metric span,
+  .status-row span,
   .textarea-label small,
   .hint,
   .label-row small,
@@ -264,6 +339,15 @@ dd {
   }
 
   .status {
+    border-color: #3c4043;
+  }
+
+  .status-dashboard,
+  .metric {
+    border-color: #3c4043;
+  }
+
+  .status-row {
     border-color: #3c4043;
   }
 
