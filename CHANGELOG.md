@@ -13,6 +13,7 @@
 - Added clickable starter templates for custom word filters.
 - Added separate custom filter source/type reporting in debug and popup status.
 - Excluded casual Korean laughter and crying reactions from the default meaningless rule.
+- Added repository `.gitignore` for local, dependency, build, and packaged extension artifacts.
 - Added popup status for Prompt API availability and fallback usage.
 - Added validation for moderation style settings before applying CSS classes.
 - Added safer comment queueing to avoid duplicate work and empty-text false positives.
