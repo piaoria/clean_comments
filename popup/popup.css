@@ -82,6 +82,55 @@ p {
   min-width: 0;
 }
 
+.textarea-label strong,
+.textarea-label small {
+  display: block;
+}
+
+.textarea-label small,
+.hint {
+  color: #5f6368;
+}
+
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.template-button {
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3c4043;
+  font: 600 11px/1.35 system-ui, sans-serif;
+}
+
+.template-button:active {
+  background: #e8f0fe;
+}
+
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #202124;
+  font: 12px/1.45 system-ui, sans-serif;
+  resize: vertical;
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+
 .setting strong,
 .setting small {
   display: block;
@@ -139,6 +188,8 @@ dd {
 
   p,
   dt,
+  .textarea-label small,
+  .hint,
   .setting small {
     color: #bdc1c6;
   }
@@ -160,5 +211,21 @@ dd {
     border-color: #8ab4f8;
     background: #1f2a44;
     color: #d2e3fc;
+  }
+
+  textarea {
+    border-color: #3c4043;
+    background: #202124;
+    color: #e8eaed;
+  }
+
+  .template-button {
+    border-color: #3c4043;
+    background: #202124;
+    color: #e8eaed;
+  }
+
+  .template-button:active {
+    background: #1f2a44;
   }
 }

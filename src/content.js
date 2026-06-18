@@ -9,6 +9,7 @@
   const SOURCE_ATTR = "data-clean-comments-source";
   const CONFIDENCE_ATTR = "data-clean-comments-confidence";
   const REASON_ATTR = "data-clean-comments-reason";
+  const TYPE_ATTR = "data-clean-comments-type";
   const TEXT_RETRY_ATTR = "data-clean-comments-text-retries";
   const DEBUG_CLASS = "clean-comments-debug";
   const PENDING_CLASS = "clean-comments-pending";
@@ -20,7 +21,8 @@
   const IMMEDIATE_RULE_CONFIDENCE = 0.85;
   const DEFAULT_SETTINGS = Object.freeze({
     showDebugBadges: true,
-    moderationMode: "blur"
+    moderationMode: "blur",
+    customFilterWords: []
   });
   const MODERATION_MODE_CLASSES = [
     "clean-comments-mode-blur",
@@ -35,6 +37,7 @@
     totalProcessed: 0,
     promptApiClassifications: 0,
     ruleFallbackClassifications: 0,
+    userWordClassifications: 0,
     pendingClassifications: 0,
     harmfulFiltered: 0,
     safeComments: 0,
@@ -62,7 +65,7 @@
     const badge = existingBadge || document.createElement("div");
 
     badge.className = DEBUG_CLASS;
-    badge.textContent = `${result.label} | ${result.source} | ${formatConfidence(result.confidence)} | ${result.reason}`;
+    badge.textContent = `${result.label} | ${result.type || result.source} | ${result.source} | ${formatConfidence(result.confidence)} | ${result.reason}`;
 
     if (!existingBadge) {
       commentNode.append(badge);
@@ -95,7 +98,8 @@
       label: commentNode.getAttribute(LABEL_ATTR) || "safe",
       source: commentNode.getAttribute(SOURCE_ATTR) || "unknown",
       confidence: Number(commentNode.getAttribute(CONFIDENCE_ATTR) || 0),
-      reason: commentNode.getAttribute(REASON_ATTR) || "no reason stored"
+      reason: commentNode.getAttribute(REASON_ATTR) || "no reason stored",
+      type: commentNode.getAttribute(TYPE_ATTR) || "unknown"
     };
   }
 
@@ -130,6 +134,7 @@
     commentNode.setAttribute(SOURCE_ATTR, result.source);
     commentNode.setAttribute(CONFIDENCE_ATTR, String(result.confidence));
     commentNode.setAttribute(REASON_ATTR, result.reason);
+    commentNode.setAttribute(TYPE_ATTR, result.type || result.source);
 
     if (HARMFUL_LABELS.has(result.label)) {
       commentNode.classList.add("clean-comments-hidden");
@@ -177,6 +182,8 @@
 
     if (result.source === "prompt_api") {
       status.promptApiClassifications += 1;
+    } else if (result.source === "user_settings") {
+      status.userWordClassifications += 1;
     } else {
       status.ruleFallbackClassifications += 1;
     }
@@ -192,6 +199,36 @@
 
   function shouldApplyRuleImmediately(result) {
     return HARMFUL_LABELS.has(result.label) && result.confidence >= IMMEDIATE_RULE_CONFIDENCE;
+  }
+
+  function normalizeCustomWords(words) {
+    if (!Array.isArray(words)) {
+      return [];
+    }
+
+    return words
+      .map((word) => String(word || "").trim())
+      .filter((word) => word.length > 0)
+      .slice(0, 100);
+  }
+
+  function classifyByUserWords(text) {
+    const normalizedText = String(text || "").toLowerCase();
+    const matchedWord = settings.customFilterWords.find((word) => {
+      return normalizedText.includes(word.toLowerCase());
+    });
+
+    if (!matchedWord) {
+      return null;
+    }
+
+    return {
+      label: "user_word",
+      confidence: 1,
+      source: "user_settings",
+      type: "custom_word",
+      reason: `matched custom word: ${matchedWord.slice(0, 64)}`
+    };
   }
 
   async function processQueue() {
@@ -212,6 +249,13 @@
       const text = getCommentText(commentNode);
       if (!text) {
         retryWhenTextIsReady(commentNode);
+        continue;
+      }
+
+      const userWordResult = classifyByUserWords(text);
+      if (userWordResult) {
+        applyResult(commentNode, userWordResult);
+        recordResult(userWordResult);
         continue;
       }
 
@@ -255,6 +299,23 @@
     root.querySelectorAll(COMMENT_SELECTOR).forEach(enqueueComment);
   }
 
+  function resetCommentForRecheck(commentNode) {
+    commentNode.removeAttribute(PROCESSED_ATTR);
+    commentNode.removeAttribute(LABEL_ATTR);
+    commentNode.removeAttribute(SOURCE_ATTR);
+    commentNode.removeAttribute(CONFIDENCE_ATTR);
+    commentNode.removeAttribute(REASON_ATTR);
+    commentNode.removeAttribute(TYPE_ATTR);
+    commentNode.classList.remove("clean-comments-hidden", ...MODERATION_MODE_CLASSES);
+    removeDebugBadge(commentNode);
+    removePendingIndicator(commentNode);
+    enqueueComment(commentNode);
+  }
+
+  function recheckVisibleComments() {
+    document.querySelectorAll(COMMENT_SELECTOR).forEach(resetCommentForRecheck);
+  }
+
   function observeComments() {
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -287,6 +348,7 @@
       ...DEFAULT_SETTINGS,
       ...(await chrome.storage.sync.get(DEFAULT_SETTINGS))
     };
+    settings.customFilterWords = normalizeCustomWords(settings.customFilterWords);
   }
 
   function observeSettings() {
@@ -307,6 +369,11 @@
       if (changes.moderationMode) {
         settings.moderationMode = getModerationMode(changes.moderationMode.newValue);
         syncModerationMode();
+      }
+
+      if (changes.customFilterWords) {
+        settings.customFilterWords = normalizeCustomWords(changes.customFilterWords.newValue);
+        recheckVisibleComments();
       }
     });
   }

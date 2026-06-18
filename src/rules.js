@@ -5,6 +5,7 @@
     LINK_BAIT: "link_bait",
     MEANINGLESS: "meaningless",
     HARASSMENT: "harassment",
+    USER_WORD: "user_word",
     SAFE: "safe"
   });
 
@@ -13,7 +14,8 @@
     LABELS.ADULT_BAIT,
     LABELS.LINK_BAIT,
     LABELS.MEANINGLESS,
-    LABELS.HARASSMENT
+    LABELS.HARASSMENT,
+    LABELS.USER_WORD
   ]);
 
   const RULES = [

@@ -39,6 +39,20 @@
         <input id="showDebugBadges" type="checkbox" role="switch">
       </label>
 
+      <section class="panel">
+        <label class="textarea-label" for="customFilterWords">
+          <strong>Custom words</strong>
+          <small>One word or phrase per line</small>
+        </label>
+        <div class="template-row" aria-label="Suggested word templates">
+          <button type="button" class="template-button" data-template="harassment">Harassment pack</button>
+          <button type="button" class="template-button" data-template="spam">Spam bait pack</button>
+          <button type="button" class="template-button" data-template="adult">Adult bait pack</button>
+        </div>
+        <textarea id="customFilterWords" rows="5" spellcheck="false" placeholder="bad word&#10;spam phrase"></textarea>
+        <p class="hint" id="customWordsHint">0 saved</p>
+      </section>
+
       <section class="status" aria-live="polite">
         <h2>Status</h2>
         <dl>
@@ -53,6 +67,10 @@
           <div>
             <dt>Fallback</dt>
             <dd id="fallbackStatus">0</dd>
+          </div>
+          <div>
+            <dt>Custom</dt>
+            <dd id="customStatus">0</dd>
           </div>
           <div>
             <dt>Last</dt>
