@@ -15,10 +15,12 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 
 ## Current Behavior
 
-- Runs as a Manifest V3 content-script extension on YouTube watch pages.
+- Runs as a Manifest V3 content-script extension on YouTube pages and processes comment threads when present.
 - Watches newly loaded YouTube comments.
 - Classifies comment text with Chrome Built-in AI when possible.
 - Falls back to rule-based filtering.
+- Falls back to local rules when Prompt API session creation or response generation times out.
+- Uses local rules instead of low-confidence harmful Prompt API results.
 - Applies user-defined custom word and phrase filters before rule or AI review.
 - Offers clickable starter templates for harassment, spam bait, and adult bait custom filters.
 - Filters harmful comments with a user-selected style: blur, blind, or dim.
@@ -35,6 +37,9 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 
 ```text
 manifest.json
+package.json
+assets/
+  icons/
 popup/
   popup.css
   popup.html
@@ -44,6 +49,8 @@ src/
   content.js
   rules.js
   styles.css
+tests/
+  run-tests.js
 ```
 
 ## Local Setup
@@ -54,6 +61,16 @@ src/
 4. Select "Load unpacked".
 5. Choose this project folder.
 6. Open a YouTube video page and scroll to the comments.
+
+## Verification
+
+Run the lightweight regression checks with:
+
+```bash
+npm test
+```
+
+The tests cover local rule labels, Korean reaction exceptions, low-confidence Prompt API fallback, high-confidence Prompt API results, and popup template encoding.
 
 ## Built-in AI Note
 
@@ -68,6 +85,7 @@ Chrome Built-in AI and the Prompt API may require a compatible Chrome version, l
 - Per-label behavior settings are stored in Chrome sync storage with the rest of the user's preferences.
 - DOM labels and badges use `textContent`, not HTML injection.
 - User settings are validated before they affect CSS class names.
+- Prompt API calls are time-limited and fall back to local rules to avoid blocking comment processing indefinitely.
 
 ## Design Principles
 

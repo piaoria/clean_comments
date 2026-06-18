@@ -1,0 +1,8 @@
+{
+  "name": "clean_comments",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run-tests.js"
+  }
+}

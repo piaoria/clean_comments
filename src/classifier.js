@@ -9,6 +9,8 @@
     "Use safe for normal disagreement, criticism, jokes, or harmless comments.",
     "Do not add markdown or extra text."
   ].join(" ");
+  const PROMPT_API_TIMEOUT_MS = 2500;
+  const MIN_AI_HARMFUL_CONFIDENCE = 0.75;
 
   let sessionPromise = null;
   const status = {
@@ -24,6 +26,25 @@
     Object.assign(status, patch, {
       lastUpdatedAt: new Date().toISOString()
     });
+  }
+
+  function withTimeout(promise, timeoutMs, reason) {
+    let timeoutId = 0;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = global.setTimeout(() => {
+        reject(new Error(reason));
+      }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+      global.clearTimeout(timeoutId);
+    });
+  }
+
+  function isLowConfidenceHarmfulResult(result) {
+    return result
+      && result.label !== LABELS.SAFE
+      && result.confidence < MIN_AI_HARMFUL_CONFIDENCE;
   }
 
   function getLanguageModelApi() {
@@ -129,7 +150,11 @@
   }
 
   async function classifyWithPromptApi(text) {
-    const session = await getSession();
+    const session = await withTimeout(
+      getSession(),
+      PROMPT_API_TIMEOUT_MS,
+      "Prompt API session timeout"
+    );
     if (!session || typeof session.prompt !== "function") {
       return null;
     }
@@ -139,7 +164,11 @@
       `Comment: ${JSON.stringify(String(text).slice(0, 1200))}`
     ].join("\n");
 
-    const response = await session.prompt(prompt);
+    const response = await withTimeout(
+      session.prompt(prompt),
+      PROMPT_API_TIMEOUT_MS,
+      "Prompt API response timeout"
+    );
     const result = parseAiResponse(response);
     updateStatus({ lastSource: result.source });
     return result;
@@ -149,6 +178,18 @@
     try {
       const aiResult = await classifyWithPromptApi(text);
       if (aiResult) {
+        if (isLowConfidenceHarmfulResult(aiResult)) {
+          const fallbackResult = classifyByRules(text);
+          updateStatus({
+            lastSource: fallbackResult.source,
+            promptApiLastError: `low confidence ${aiResult.label} (${aiResult.confidence})`
+          });
+          return {
+            ...fallbackResult,
+            reason: `${fallbackResult.reason}; low confidence Prompt API ${aiResult.label}`.slice(0, 160)
+          };
+        }
+
         return aiResult;
       }
     } catch (error) {

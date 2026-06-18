@@ -15,6 +15,10 @@
 - Excluded casual Korean laughter and crying reactions from the default meaningless rule.
 - Added repository `.gitignore` for local, dependency, build, and packaged extension artifacts.
 - Added a tabbed popup layout with per-label enable and moderation style settings.
+- Added Prompt API timeout handling and low-confidence harmful result fallback.
+- Added extension icon assets and manifest icon declarations.
+- Added lightweight Node regression tests for rules, Prompt API fallback, and popup template encoding.
+- Replaced corrupted popup starter template strings with stable escaped Korean terms.
 - Added popup status for Prompt API availability and fallback usage.
 - Added validation for moderation style settings before applying CSS classes.
 - Added safer comment queueing to avoid duplicate work and empty-text false positives.

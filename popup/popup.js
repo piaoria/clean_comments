@@ -57,12 +57,12 @@
       "shut up",
       "kill yourself",
       "kys",
-      "병신",
-      "멍청",
-      "꺼져",
-      "닥쳐",
-      "죽어",
-      "극혐"
+      "\uBCD1\uC2E0",
+      "\uBA4D\uCCAD",
+      "\uAEBC\uC838",
+      "\uB2E5\uCCD0",
+      "\uC8FD\uC5B4",
+      "\uADF9\uD610"
     ],
     spam: [
       "free giveaway",
@@ -73,12 +73,12 @@
       "whatsapp",
       "crypto",
       "airdrop",
-      "부업",
-      "수익",
-      "코인",
-      "리딩방",
-      "텔레그램",
-      "오픈채팅"
+      "\uBB34\uB8CC",
+      "\uC774\uBCA4\uD2B8",
+      "\uBD80\uC5C5",
+      "\uC218\uC775",
+      "\uCF54\uC778",
+      "\uC624\uD508\uCC44\uD305"
     ],
     adult: [
       "18+",
@@ -87,10 +87,10 @@
       "nude",
       "onlyfans",
       "hot girls",
-      "19금",
-      "성인",
-      "야동",
-      "조건만남"
+      "19\uAE08",
+      "\uC131\uC778",
+      "\uC57C\uB3D9",
+      "\uC870\uAC74\uB9CC\uB0A8"
     ]
   });
 
