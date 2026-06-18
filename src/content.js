@@ -19,10 +19,19 @@
   const TEXT_RETRY_DELAY_MS = 600;
   const MAX_TEXT_RETRIES = 5;
   const IMMEDIATE_RULE_CONFIDENCE = 0.85;
+  const DEFAULT_LABEL_SETTINGS = Object.freeze({
+    spam: { enabled: true, mode: "blur" },
+    adult_bait: { enabled: true, mode: "blur" },
+    link_bait: { enabled: true, mode: "blur" },
+    meaningless: { enabled: true, mode: "blur" },
+    harassment: { enabled: true, mode: "blur" },
+    user_word: { enabled: true, mode: "blur" }
+  });
   const DEFAULT_SETTINGS = Object.freeze({
     showDebugBadges: true,
     moderationMode: "blur",
-    customFilterWords: []
+    customFilterWords: [],
+    labelSettings: DEFAULT_LABEL_SETTINGS
   });
   const MODERATION_MODE_CLASSES = [
     "clean-comments-mode-blur",
@@ -113,9 +122,9 @@
     });
   }
 
-  function applyModerationMode(commentNode) {
+  function applyModerationMode(commentNode, result) {
     commentNode.classList.remove(...MODERATION_MODE_CLASSES);
-    commentNode.classList.add(`clean-comments-mode-${getModerationMode(settings.moderationMode)}`);
+    commentNode.classList.add(`clean-comments-mode-${getResultMode(result)}`);
   }
 
   function getModerationMode(mode) {
@@ -123,8 +132,54 @@
     return MODERATION_MODES.has(normalizedMode) ? normalizedMode : DEFAULT_SETTINGS.moderationMode;
   }
 
+  function createDefaultLabelSettings(mode) {
+    const normalizedMode = getModerationMode(mode);
+    const labelSettings = {};
+
+    Object.keys(DEFAULT_LABEL_SETTINGS).forEach((label) => {
+      labelSettings[label] = {
+        enabled: true,
+        mode: normalizedMode
+      };
+    });
+
+    return labelSettings;
+  }
+
+  function normalizeLabelSettings(labelSettings) {
+    const normalizedSettings = {};
+
+    Object.entries(DEFAULT_LABEL_SETTINGS).forEach(([label, defaults]) => {
+      const current = labelSettings && typeof labelSettings === "object" ? labelSettings[label] : null;
+      normalizedSettings[label] = {
+        enabled: current?.enabled !== false,
+        mode: getModerationMode(current?.mode || defaults.mode)
+      };
+    });
+
+    return normalizedSettings;
+  }
+
+  function getLabelSetting(label) {
+    return settings.labelSettings[label] || {
+      enabled: true,
+      mode: getModerationMode(settings.moderationMode)
+    };
+  }
+
+  function shouldFilterLabel(label) {
+    return HARMFUL_LABELS.has(label) && getLabelSetting(label).enabled !== false;
+  }
+
+  function getResultMode(result) {
+    const labelSetting = getLabelSetting(result.label);
+    return getModerationMode(labelSetting.mode || settings.moderationMode);
+  }
+
   function syncModerationMode() {
-    document.querySelectorAll(`${COMMENT_SELECTOR}.clean-comments-hidden`).forEach(applyModerationMode);
+    document.querySelectorAll(`${COMMENT_SELECTOR}.clean-comments-hidden`).forEach((commentNode) => {
+      applyModerationMode(commentNode, getStoredResult(commentNode));
+    });
   }
 
   function applyResult(commentNode, result) {
@@ -136,9 +191,9 @@
     commentNode.setAttribute(REASON_ATTR, result.reason);
     commentNode.setAttribute(TYPE_ATTR, result.type || result.source);
 
-    if (HARMFUL_LABELS.has(result.label)) {
+    if (shouldFilterLabel(result.label)) {
       commentNode.classList.add("clean-comments-hidden");
-      applyModerationMode(commentNode);
+      applyModerationMode(commentNode, result);
       commentNode.title = `clean_comments: ${result.label} (${result.source})`;
 
       if (settings.showDebugBadges) {
@@ -188,7 +243,7 @@
       status.ruleFallbackClassifications += 1;
     }
 
-    if (HARMFUL_LABELS.has(result.label)) {
+    if (shouldFilterLabel(result.label)) {
       status.harmfulFiltered += 1;
     } else {
       status.safeComments += 1;
@@ -198,7 +253,7 @@
   }
 
   function shouldApplyRuleImmediately(result) {
-    return HARMFUL_LABELS.has(result.label) && result.confidence >= IMMEDIATE_RULE_CONFIDENCE;
+    return shouldFilterLabel(result.label) && result.confidence >= IMMEDIATE_RULE_CONFIDENCE;
   }
 
   function normalizeCustomWords(words) {
@@ -253,7 +308,7 @@
       }
 
       const userWordResult = classifyByUserWords(text);
-      if (userWordResult) {
+      if (userWordResult && shouldFilterLabel(userWordResult.label)) {
         applyResult(commentNode, userWordResult);
         recordResult(userWordResult);
         continue;
@@ -344,11 +399,18 @@
       return;
     }
 
+    const storedSettings = await chrome.storage.sync.get(Object.keys(DEFAULT_SETTINGS));
+    const moderationMode = getModerationMode(storedSettings.moderationMode);
+
     settings = {
       ...DEFAULT_SETTINGS,
-      ...(await chrome.storage.sync.get(DEFAULT_SETTINGS))
+      ...storedSettings,
+      moderationMode
     };
     settings.customFilterWords = normalizeCustomWords(settings.customFilterWords);
+    settings.labelSettings = normalizeLabelSettings(
+      storedSettings.labelSettings || createDefaultLabelSettings(moderationMode)
+    );
   }
 
   function observeSettings() {
@@ -369,6 +431,11 @@
       if (changes.moderationMode) {
         settings.moderationMode = getModerationMode(changes.moderationMode.newValue);
         syncModerationMode();
+      }
+
+      if (changes.labelSettings) {
+        settings.labelSettings = normalizeLabelSettings(changes.labelSettings.newValue);
+        recheckVisibleComments();
       }
 
       if (changes.customFilterWords) {

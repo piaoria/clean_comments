@@ -22,6 +22,8 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 - Applies user-defined custom word and phrase filters before rule or AI review.
 - Offers clickable starter templates for harassment, spam bait, and adult bait custom filters.
 - Filters harmful comments with a user-selected style: blur, blind, or dim.
+- Provides a tabbed popup with general settings, label-specific behavior, custom words, and live status.
+- Lets users enable or disable filtering per label and choose blur, blind, or dim per label.
 - Keeps casual Korean reactions like repeated laughter or crying expressions out of the default meaningless filter.
 - Immediately filters high-confidence rule matches, while ambiguous comments stay visible during async AI review.
 - Provides a popup setting to show or hide debug badges next to filtered comments.
@@ -63,6 +65,7 @@ Chrome Built-in AI and the Prompt API may require a compatible Chrome version, l
 - The extension does not send comment text to an external server.
 - Popup status stores counters and the last label/source/reason, not raw comment text.
 - Custom filter words are stored in Chrome sync storage so the user's own browser profile can apply them.
+- Per-label behavior settings are stored in Chrome sync storage with the rest of the user's preferences.
 - DOM labels and badges use `textContent`, not HTML injection.
 - User settings are validated before they affect CSS class names.
 

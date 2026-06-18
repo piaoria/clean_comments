@@ -3,7 +3,7 @@
 }
 
 body {
-  width: 312px;
+  width: 360px;
   margin: 0;
   background: #ffffff;
   color: #202124;
@@ -11,10 +11,14 @@ body {
 }
 
 .popup {
-  padding: 14px;
+  padding: 14px 14px 16px;
 }
 
 header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
@@ -29,6 +33,35 @@ p {
   color: #5f6368;
 }
 
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+}
+
+.tab-button {
+  min-width: 0;
+  min-height: 30px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5f6368;
+  font: 700 11px/1.2 system-ui, sans-serif;
+}
+
+.tab-button[aria-selected="true"] {
+  background: #e8f0fe;
+  color: #174ea6;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
 .setting {
   display: flex;
   align-items: center;
@@ -41,7 +74,6 @@ p {
   margin-bottom: 8px;
   padding: 10px 0;
   border-top: 1px solid #dadce0;
-  border-bottom: 1px solid #dadce0;
 }
 
 .segmented {
@@ -111,6 +143,42 @@ p {
 
 .template-button:active {
   background: #e8f0fe;
+}
+
+.label-list {
+  display: grid;
+  gap: 8px;
+}
+
+.label-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 38px;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.label-row strong,
+.label-row small {
+  display: block;
+}
+
+.label-row strong {
+  overflow-wrap: anywhere;
+}
+
+.label-row small {
+  color: #5f6368;
+}
+
+.label-mode {
+  width: 100%;
+  min-height: 30px;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #202124;
+  font: 600 12px/1.2 system-ui, sans-serif;
 }
 
 textarea {
@@ -190,6 +258,7 @@ dd {
   dt,
   .textarea-label small,
   .hint,
+  .label-row small,
   .setting small {
     color: #bdc1c6;
   }
@@ -198,8 +267,18 @@ dd {
     border-color: #3c4043;
   }
 
+  .tabs,
   .panel {
     border-color: #3c4043;
+  }
+
+  .tab-button {
+    color: #bdc1c6;
+  }
+
+  .tab-button[aria-selected="true"] {
+    background: #1f2a44;
+    color: #d2e3fc;
   }
 
   .segmented span {
@@ -214,6 +293,12 @@ dd {
   }
 
   textarea {
+    border-color: #3c4043;
+    background: #202124;
+    color: #e8eaed;
+  }
+
+  .label-mode {
     border-color: #3c4043;
     background: #202124;
     color: #e8eaed;
