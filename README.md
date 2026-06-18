@@ -22,6 +22,7 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 - Applies user-defined custom word and phrase filters before rule or AI review.
 - Offers clickable starter templates for harassment, spam bait, and adult bait custom filters.
 - Filters harmful comments with a user-selected style: blur, blind, or dim.
+- Keeps casual Korean reactions like repeated laughter or crying expressions out of the default meaningless filter.
 - Immediately filters high-confidence rule matches, while ambiguous comments stay visible during async AI review.
 - Provides a popup setting to show or hide debug badges next to filtered comments.
 - Shows Prompt API availability, AI/rule fallback counts, and last classification in the popup.
