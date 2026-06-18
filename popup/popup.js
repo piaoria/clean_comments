@@ -2,33 +2,33 @@
   const LABELS = Object.freeze([
     {
       id: "spam",
-      name: "Spam",
-      description: "Promotions, giveaways, and repeated bait"
+      name: "스팸",
+      description: "홍보, 이벤트, 반복 유도 댓글"
     },
     {
       id: "adult_bait",
-      name: "Adult bait",
-      description: "Sexual or dating bait comments"
+      name: "성인 유도",
+      description: "성인물, 만남, 선정적 유도 댓글"
     },
     {
       id: "link_bait",
-      name: "Link bait",
-      description: "Suspicious links and profile redirects"
+      name: "링크 유도",
+      description: "의심 링크, 프로필 이동 유도"
     },
     {
       id: "meaningless",
-      name: "Meaningless",
-      description: "Empty, tiny, or highly repetitive comments"
+      name: "무의미",
+      description: "비어 있거나 짧고 반복적인 댓글"
     },
     {
       id: "harassment",
-      name: "Harassment",
-      description: "Insults, threats, and targeted abuse"
+      name: "괴롭힘",
+      description: "욕설, 위협, 특정 대상 비난"
     },
     {
       id: "user_word",
-      name: "Custom words",
-      description: "Words and phrases saved in this popup"
+      name: "사용자 단어",
+      description: "직접 저장한 단어와 문구"
     }
   ]);
   const DEFAULT_LABEL_SETTINGS = Object.freeze({
@@ -47,6 +47,11 @@
   });
   const STATUS_STORAGE_KEY = "cleanCommentsStatus";
   const MODERATION_MODES = new Set(["blur", "blind", "dim"]);
+  const MODE_LABELS = Object.freeze({
+    blur: "흐림",
+    blind: "가림",
+    dim: "약화"
+  });
   const WORD_TEMPLATES = Object.freeze({
     harassment: [
       "idiot",
@@ -183,7 +188,7 @@
   function renderCustomWords(words) {
     const normalizedWords = Array.isArray(words) ? words : [];
     customFilterWords.value = normalizedWords.join("\n");
-    customWordsHint.textContent = `${normalizedWords.length} saved`;
+    customWordsHint.textContent = `${normalizedWords.length}개 저장됨`;
   }
 
   function renderLabelSettings(settings) {
@@ -205,11 +210,11 @@
 
       mode.className = "label-mode";
       mode.dataset.label = label.id;
-      mode.setAttribute("aria-label", `${label.name} style`);
+      mode.setAttribute("aria-label", `${label.name} 표시 방식`);
       ["blur", "blind", "dim"].forEach((modeName) => {
         const option = document.createElement("option");
         option.value = modeName;
-        option.textContent = modeName[0].toUpperCase() + modeName.slice(1);
+        option.textContent = MODE_LABELS[modeName];
         mode.append(option);
       });
       mode.value = getModerationMode(labelSetting.mode);
@@ -218,7 +223,7 @@
       toggle.role = "switch";
       toggle.dataset.label = label.id;
       toggle.checked = labelSetting.enabled !== false;
-      toggle.setAttribute("aria-label", `${label.name} filtering`);
+      toggle.setAttribute("aria-label", `${label.name} 필터링`);
 
       row.append(copy, mode, toggle);
       labelSettings.append(row);
@@ -230,11 +235,11 @@
     await chrome.storage.sync.set({
       customFilterWords: words
     });
-    customWordsHint.textContent = `${words.length} saved`;
+    customWordsHint.textContent = `${words.length}개 저장됨`;
   }
 
   function scheduleCustomWordsSave() {
-    customWordsHint.textContent = "Saving...";
+    customWordsHint.textContent = "저장 중...";
     clearTimeout(customWordsSaveTimer);
     customWordsSaveTimer = setTimeout(() => {
       void saveCustomWords();
@@ -292,14 +297,14 @@
 
   function describeAiStatus(classifier = {}) {
     if (!classifier.promptApiDetected) {
-      return "Prompt API missing";
+      return "Prompt API 없음";
     }
 
     if (classifier.promptApiSessionReady) {
-      return `Prompt API ready (${classifier.promptApiAvailability})`;
+      return `Prompt API 준비됨 (${classifier.promptApiAvailability})`;
     }
 
-    return `Prompt API waiting (${classifier.promptApiAvailability || "unknown"})`;
+    return `Prompt API 대기 중 (${classifier.promptApiAvailability || "unknown"})`;
   }
 
   function renderStatus(status = {}) {
@@ -311,12 +316,12 @@
     const pendingCount = Number(status.pendingClassifications || 0);
 
     aiStatus.textContent = describeAiStatus(status.classifier);
-    classificationStatus.textContent = `${totalProcessed} / AI ${promptApiCount} / filtered ${harmfulFiltered} / checking ${pendingCount}`;
+    classificationStatus.textContent = `${totalProcessed} / AI ${promptApiCount} / 필터 ${harmfulFiltered} / 확인 중 ${pendingCount}`;
     fallbackStatus.textContent = `${fallbackCount}`;
     customStatus.textContent = `${customCount}`;
     lastStatus.textContent = status.lastLabel && status.lastLabel !== "none"
       ? `${status.lastLabel} (${status.lastSource})`
-      : "None";
+      : "없음";
   }
 
   async function loadStatus() {

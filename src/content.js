@@ -1,8 +1,8 @@
 (function runContentScript(global, document) {
   const { HARMFUL_LABELS, classifyByRules } = global.CleanCommentsRules;
-  const { classifyComment, getClassifierStatus } = global.CleanCommentsClassifier;
+  const { classifyCommentsBatch, getClassifierStatus } = global.CleanCommentsClassifier;
 
-  const COMMENT_SELECTOR = "ytd-comment-thread-renderer";
+  const COMMENT_SELECTOR = "ytd-comment-renderer, ytd-comment-view-model";
   const TEXT_SELECTOR = "#content-text";
   const PROCESSED_ATTR = "data-clean-comments-processed";
   const LABEL_ATTR = "data-clean-comments-label";
@@ -19,6 +19,7 @@
   const TEXT_RETRY_DELAY_MS = 600;
   const MAX_TEXT_RETRIES = 5;
   const IMMEDIATE_RULE_CONFIDENCE = 0.85;
+  const AI_BATCH_SIZE = 10;
   const DEFAULT_LABEL_SETTINGS = Object.freeze({
     spam: { enabled: true, mode: "blur" },
     adult_bait: { enabled: true, mode: "blur" },
@@ -286,14 +287,10 @@
     };
   }
 
-  async function processQueue() {
-    if (isProcessing) {
-      return;
-    }
+  function takeNextAiBatch() {
+    const batch = [];
 
-    isProcessing = true;
-
-    while (queue.length > 0) {
+    while (queue.length > 0 && batch.length < AI_BATCH_SIZE) {
       const commentNode = queue.shift();
       queuedComments.delete(commentNode);
 
@@ -322,12 +319,50 @@
       }
 
       markPending(commentNode);
-      const result = await classifyComment(text);
-      applyResult(commentNode, result);
-      recordResult(result);
+      batch.push({
+        commentNode,
+        text
+      });
     }
 
-    isProcessing = false;
+    return batch;
+  }
+
+  function applyBatchResults(batch, results) {
+    results.forEach((result, index) => {
+      const { commentNode } = batch[index];
+
+      if (!commentNode?.isConnected || commentNode.hasAttribute(PROCESSED_ATTR)) {
+        status.pendingClassifications = Math.max(0, status.pendingClassifications - 1);
+        return;
+      }
+
+      applyResult(commentNode, result);
+      recordResult(result);
+    });
+  }
+
+  async function processQueue() {
+    if (isProcessing) {
+      return;
+    }
+
+    isProcessing = true;
+
+    try {
+      while (queue.length > 0) {
+        const batch = takeNextAiBatch();
+
+        if (batch.length === 0) {
+          continue;
+        }
+
+        const results = await classifyCommentsBatch(batch.map((item) => item.text));
+        applyBatchResults(batch, results);
+      }
+    } finally {
+      isProcessing = false;
+    }
   }
 
   function enqueueComment(commentNode) {

@@ -1,29 +1,29 @@
-ytd-comment-thread-renderer.clean-comments-hidden {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden {
   position: relative;
 }
 
-ytd-comment-thread-renderer.clean-comments-pending {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-pending {
   position: relative;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blur #main {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blur :is(#main, #body) {
   filter: blur(5px);
   opacity: 0.42;
   transition: filter 160ms ease, opacity 160ms ease;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blur:hover #main,
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blur:focus-within #main {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blur:hover :is(#main, #body),
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blur:focus-within :is(#main, #body) {
   filter: blur(0);
   opacity: 1;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blind #main {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blind :is(#main, #body) {
   visibility: hidden;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blind::after {
-  content: "Blocked by clean_comments";
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blind::after {
+  content: "clean_comments가 숨긴 댓글";
   display: block;
   margin: 8px 0 10px 56px;
   padding: 10px 12px;
@@ -34,17 +34,17 @@ ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blind::aft
   font: 600 12px/1.4 system-ui, sans-serif;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-dim #main {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-dim :is(#main, #body) {
   opacity: 0.22;
   transition: opacity 160ms ease;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-dim:hover #main,
-ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-dim:focus-within #main {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-dim:hover :is(#main, #body),
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-dim:focus-within :is(#main, #body) {
   opacity: 0.72;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden::before {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden::before {
   content: attr(data-clean-comments-label);
   position: absolute;
   top: 8px;
@@ -58,7 +58,7 @@ ytd-comment-thread-renderer.clean-comments-hidden::before {
   pointer-events: none;
 }
 
-ytd-comment-thread-renderer.clean-comments-hidden > .clean-comments-debug {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden > .clean-comments-debug {
   display: inline-flex;
   max-width: min(560px, calc(100% - 72px));
   margin: 4px 0 10px 56px;
@@ -71,19 +71,19 @@ ytd-comment-thread-renderer.clean-comments-hidden > .clean-comments-debug {
   overflow-wrap: anywhere;
 }
 
-html[dark] ytd-comment-thread-renderer.clean-comments-hidden > .clean-comments-debug {
+html[dark] :is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden > .clean-comments-debug {
   border-color: #3c4043;
   background: #202124;
   color: #e8eaed;
 }
 
-html[dark] ytd-comment-thread-renderer.clean-comments-hidden.clean-comments-mode-blind::after {
+html[dark] :is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-hidden.clean-comments-mode-blind::after {
   border-color: #3c4043;
   background: #202124;
   color: #e8eaed;
 }
 
-ytd-comment-thread-renderer.clean-comments-pending > .clean-comments-pending-indicator {
+:is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-pending > .clean-comments-pending-indicator {
   display: inline-flex;
   margin: 2px 0 6px 56px;
   padding: 1px 6px;
@@ -94,7 +94,7 @@ ytd-comment-thread-renderer.clean-comments-pending > .clean-comments-pending-ind
   pointer-events: none;
 }
 
-html[dark] ytd-comment-thread-renderer.clean-comments-pending > .clean-comments-pending-indicator {
+html[dark] :is(ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model).clean-comments-pending > .clean-comments-pending-indicator {
   color: #bdc1c6;
   background: rgba(232, 234, 237, 0.08);
 }

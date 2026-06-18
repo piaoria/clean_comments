@@ -16,8 +16,9 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 ## Current Behavior
 
 - Runs as a Manifest V3 content-script extension on YouTube pages and processes comment threads when present.
-- Watches newly loaded YouTube comments.
+- Watches newly loaded YouTube comments and replies.
 - Classifies comment text with Chrome Built-in AI when possible.
+- Sends ambiguous AI-reviewed comments in small batches instead of one request per comment.
 - Falls back to rule-based filtering.
 - Falls back to local rules when Prompt API session creation or response generation times out.
 - Uses local rules instead of low-confidence harmful Prompt API results.
@@ -70,7 +71,7 @@ Run the lightweight regression checks with:
 npm test
 ```
 
-The tests cover local rule labels, Korean reaction exceptions, low-confidence Prompt API fallback, high-confidence Prompt API results, and popup template encoding.
+The tests cover local rule labels, Korean reaction exceptions, low-confidence Prompt API fallback, high-confidence Prompt API results, batched Prompt API classification, and popup template encoding.
 
 ## Built-in AI Note
 

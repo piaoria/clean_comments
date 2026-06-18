@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,40 +11,40 @@
       <header>
         <div>
           <h1>clean_comments</h1>
-          <p>YouTube comment filter</p>
+          <p>YouTube 댓글 필터</p>
         </div>
       </header>
 
-      <nav class="tabs" aria-label="Settings sections">
-        <button type="button" class="tab-button" data-tab="general" aria-selected="true">General</button>
-        <button type="button" class="tab-button" data-tab="labels" aria-selected="false">Labels</button>
-        <button type="button" class="tab-button" data-tab="words" aria-selected="false">Words</button>
-        <button type="button" class="tab-button" data-tab="status" aria-selected="false">Status</button>
+      <nav class="tabs" aria-label="설정 섹션">
+        <button type="button" class="tab-button" data-tab="general" aria-selected="true">기본</button>
+        <button type="button" class="tab-button" data-tab="labels" aria-selected="false">라벨</button>
+        <button type="button" class="tab-button" data-tab="words" aria-selected="false">단어</button>
+        <button type="button" class="tab-button" data-tab="status" aria-selected="false">상태</button>
       </nav>
 
       <section class="tab-panel" data-panel="general">
         <section class="panel">
-          <h2>Default filtered style</h2>
-          <div class="segmented" role="radiogroup" aria-label="Default filtered comment style">
+          <h2>기본 필터 표시 방식</h2>
+          <div class="segmented" role="radiogroup" aria-label="기본 필터 표시 방식">
             <label>
               <input type="radio" name="moderationMode" value="blur">
-              <span>Blur</span>
+              <span>흐림</span>
             </label>
             <label>
               <input type="radio" name="moderationMode" value="blind">
-              <span>Blind</span>
+              <span>가림</span>
             </label>
             <label>
               <input type="radio" name="moderationMode" value="dim">
-              <span>Dim</span>
+              <span>약화</span>
             </label>
           </div>
         </section>
 
         <label class="setting">
           <span>
-            <strong>Debug badge</strong>
-            <small>Show label, source, confidence, and reason</small>
+            <strong>디버그 배지</strong>
+            <small>라벨, 출처, 신뢰도, 이유 표시</small>
           </span>
           <input id="showDebugBadges" type="checkbox" role="switch">
         </label>
@@ -52,7 +52,7 @@
 
       <section class="tab-panel" data-panel="labels" hidden>
         <section class="panel">
-          <h2>Label behavior</h2>
+          <h2>라벨별 동작</h2>
           <div class="label-list" id="labelSettings"></div>
         </section>
       </section>
@@ -60,42 +60,42 @@
       <section class="tab-panel" data-panel="words" hidden>
         <section class="panel">
           <label class="textarea-label" for="customFilterWords">
-            <strong>Custom words</strong>
-            <small>One word or phrase per line</small>
+            <strong>사용자 단어</strong>
+            <small>한 줄에 단어 또는 문구 하나씩 입력</small>
           </label>
-          <div class="template-row" aria-label="Suggested word templates">
-            <button type="button" class="template-button" data-template="harassment">Harassment</button>
-            <button type="button" class="template-button" data-template="spam">Spam bait</button>
-            <button type="button" class="template-button" data-template="adult">Adult bait</button>
+          <div class="template-row" aria-label="추천 단어 템플릿">
+            <button type="button" class="template-button" data-template="harassment">괴롭힘</button>
+            <button type="button" class="template-button" data-template="spam">스팸 유도</button>
+            <button type="button" class="template-button" data-template="adult">성인 유도</button>
           </div>
-          <textarea id="customFilterWords" rows="7" spellcheck="false" placeholder="bad word&#10;spam phrase"></textarea>
-          <p class="hint" id="customWordsHint">0 saved</p>
+          <textarea id="customFilterWords" rows="7" spellcheck="false" placeholder="차단할 단어&#10;차단할 문구"></textarea>
+          <p class="hint" id="customWordsHint">0개 저장됨</p>
         </section>
       </section>
 
       <section class="tab-panel" data-panel="status" hidden>
         <section class="status" aria-live="polite">
-          <h2>Status</h2>
+          <h2>상태</h2>
           <dl>
             <div>
               <dt>AI</dt>
-              <dd id="aiStatus">Not checked</dd>
+              <dd id="aiStatus">확인 전</dd>
             </div>
             <div>
-              <dt>Classified</dt>
+              <dt>분류</dt>
               <dd id="classificationStatus">0</dd>
             </div>
             <div>
-              <dt>Fallback</dt>
+              <dt>룰 대체</dt>
               <dd id="fallbackStatus">0</dd>
             </div>
             <div>
-              <dt>Custom</dt>
+              <dt>사용자</dt>
               <dd id="customStatus">0</dd>
             </div>
             <div>
-              <dt>Last</dt>
-              <dd id="lastStatus">None</dd>
+              <dt>최근</dt>
+              <dd id="lastStatus">없음</dd>
             </div>
           </dl>
         </section>

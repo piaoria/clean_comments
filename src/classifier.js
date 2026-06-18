@@ -47,6 +47,22 @@
       && result.confidence < MIN_AI_HARMFUL_CONFIDENCE;
   }
 
+  function normalizeAiResult(parsed) {
+    const label = String(parsed.label || "").trim();
+    const confidence = Number(parsed.confidence);
+
+    if (!ALLOWED_LABELS.has(label)) {
+      throw new Error(`Unsupported label: ${label}`);
+    }
+
+    return {
+      label,
+      confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.5,
+      source: "prompt_api",
+      reason: String(parsed.reason || "classified by Prompt API").slice(0, 160)
+    };
+  }
+
   function getLanguageModelApi() {
     if (global.LanguageModel) {
       updateStatus({ promptApiDetected: true });
@@ -134,19 +150,23 @@
     const rawText = String(rawResponse || "").trim();
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
-    const label = String(parsed.label || "").trim();
-    const confidence = Number(parsed.confidence);
+    return normalizeAiResult(parsed);
+  }
 
-    if (!ALLOWED_LABELS.has(label)) {
-      throw new Error(`Unsupported label: ${label}`);
+  function parseAiBatchResponse(rawResponse, expectedCount) {
+    const rawText = String(rawResponse || "").trim();
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+
+    if (!Array.isArray(parsed)) {
+      throw new Error("Prompt API batch response is not an array");
     }
 
-    return {
-      label,
-      confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.5,
-      source: "prompt_api",
-      reason: String(parsed.reason || "classified by Prompt API").slice(0, 160)
-    };
+    if (parsed.length !== expectedCount) {
+      throw new Error(`Prompt API batch response count mismatch: ${parsed.length}/${expectedCount}`);
+    }
+
+    return parsed.map(normalizeAiResult);
   }
 
   async function classifyWithPromptApi(text) {
@@ -172,6 +192,37 @@
     const result = parseAiResponse(response);
     updateStatus({ lastSource: result.source });
     return result;
+  }
+
+  async function classifyWithPromptApiBatch(texts) {
+    const session = await withTimeout(
+      getSession(),
+      PROMPT_API_TIMEOUT_MS,
+      "Prompt API session timeout"
+    );
+    if (!session || typeof session.prompt !== "function") {
+      return null;
+    }
+
+    const comments = texts.map((text, index) => ({
+      id: index,
+      text: String(text).slice(0, 800)
+    }));
+    const prompt = [
+      "Classify each YouTube comment.",
+      "Return only a compact JSON array with one item per input in the same order.",
+      "Each item must have keys: id, label, confidence, reason.",
+      `Comments: ${JSON.stringify(comments)}`
+    ].join("\n");
+
+    const response = await withTimeout(
+      session.prompt(prompt),
+      PROMPT_API_TIMEOUT_MS,
+      "Prompt API batch response timeout"
+    );
+    const results = parseAiBatchResponse(response, texts.length);
+    updateStatus({ lastSource: "prompt_api" });
+    return results;
   }
 
   async function classifyComment(text) {
@@ -201,12 +252,43 @@
     return fallbackResult;
   }
 
+  async function classifyCommentsBatch(texts) {
+    const fallbackResults = texts.map(classifyByRules);
+
+    try {
+      const aiResults = await classifyWithPromptApiBatch(texts);
+      if (!aiResults) {
+        updateStatus({ lastSource: "rules" });
+        return fallbackResults;
+      }
+
+      return aiResults.map((aiResult, index) => {
+        if (!isLowConfidenceHarmfulResult(aiResult)) {
+          return aiResult;
+        }
+
+        return {
+          ...fallbackResults[index],
+          reason: `${fallbackResults[index].reason}; low confidence Prompt API ${aiResult.label}`.slice(0, 160)
+        };
+      });
+    } catch (error) {
+      console.info("[clean_comments] Falling back to rules for batch:", error);
+      updateStatus({
+        lastSource: "rules",
+        promptApiLastError: String(error?.message || error)
+      });
+      return fallbackResults;
+    }
+  }
+
   function getClassifierStatus() {
     return { ...status };
   }
 
   global.CleanCommentsClassifier = {
     classifyComment,
+    classifyCommentsBatch,
     getClassifierStatus
   };
 })(globalThis);
