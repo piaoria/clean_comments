@@ -1,6 +1,9 @@
 (function runContentScript(global, document) {
   const { LABELS, HARMFUL_LABELS, classifyByRules } = global.CleanCommentsRules;
   const { classifyCommentsBatch, getClassifierStatus } = global.CleanCommentsClassifier;
+  const log = global.CleanCommentsLog
+    ? global.CleanCommentsLog.scope("content")
+    : { debug() {}, info() {}, warn() {}, error() {} };
 
   const COMMENT_SELECTOR = "ytd-comment-renderer, ytd-comment-view-model";
   const TEXT_SELECTOR = "#content-text";
@@ -19,7 +22,11 @@
   const TEXT_RETRY_DELAY_MS = 600;
   const MAX_TEXT_RETRIES = 5;
   const IMMEDIATE_RULE_CONFIDENCE = 0.85;
-  const AI_BATCH_SIZE = 10;
+  const AI_BATCH_SIZE = 50;
+  // AI-only mode: when false, local rule patterns never pre-filter comments
+  // before the Prompt API sees them. Every comment (except explicit user words)
+  // is judged by the AI. Flip back to true to restore the immediate rule pass.
+  const RULE_PREFILTER_ENABLED = false;
   const DEFAULT_LABEL_SETTINGS = Object.freeze({
     spam: { enabled: true, mode: "blur" },
     adult_bait: { enabled: true, mode: "blur" },
@@ -30,6 +37,7 @@
   });
   const DEFAULT_SETTINGS = Object.freeze({
     showDebugBadges: true,
+    verboseLogging: false,
     moderationMode: "blur",
     customFilterWords: [],
     labelSettings: DEFAULT_LABEL_SETTINGS
@@ -221,6 +229,14 @@
       if (settings.showDebugBadges) {
         upsertDebugBadge(commentNode, result);
       }
+
+      log.info(
+        `FILTERED [${result.label}] via ${result.source} (${formatConfidence(result.confidence)}): "${getCommentText(commentNode).slice(0, 80)}" — ${result.reason}`
+      );
+    } else {
+      log.debug(
+        `kept [${result.label}] via ${result.source}: "${getCommentText(commentNode).slice(0, 80)}"`
+      );
     }
   }
 
@@ -336,11 +352,13 @@
         continue;
       }
 
-      const quickRuleResult = classifyByRules(text);
-      if (shouldApplyRuleImmediately(quickRuleResult)) {
-        applyResult(commentNode, quickRuleResult);
-        recordResult(quickRuleResult);
-        continue;
+      if (RULE_PREFILTER_ENABLED) {
+        const quickRuleResult = classifyByRules(text);
+        if (shouldApplyRuleImmediately(quickRuleResult)) {
+          applyResult(commentNode, quickRuleResult);
+          recordResult(quickRuleResult);
+          continue;
+        }
       }
 
       markPending(commentNode);
@@ -391,12 +409,15 @@
         status.lastBatchStartedAt = new Date(startedAt).toISOString();
         scheduleStatusWrite();
 
+        log.info(`Processing batch of ${batch.length} comment(s) (queue: ${queue.length} remaining)`);
+        log.debug("Batch comment texts", batch.map((item) => item.text));
         const results = await classifyCommentsBatch(batch.map((item) => item.text));
         applyBatchResults(batch, results);
         status.batchesProcessed += 1;
         status.currentBatchSize = 0;
         status.lastBatchCompletedAt = new Date().toISOString();
         status.lastBatchDurationMs = Date.now() - startedAt;
+        log.info(`Batch #${status.batchesProcessed} done in ${status.lastBatchDurationMs}ms — filtered ${status.harmfulFiltered} total / ${status.totalProcessed} processed`);
         scheduleStatusWrite();
       }
     } finally {
@@ -494,6 +515,7 @@
     settings.labelSettings = normalizeLabelSettings(
       storedSettings.labelSettings || createDefaultLabelSettings(moderationMode)
     );
+    global.CleanCommentsLog?.setVerbose(Boolean(settings.verboseLogging));
   }
 
   function observeSettings() {
@@ -509,6 +531,12 @@
       if (changes.showDebugBadges) {
         settings.showDebugBadges = Boolean(changes.showDebugBadges.newValue);
         syncDebugBadges();
+      }
+
+      if (changes.verboseLogging) {
+        settings.verboseLogging = Boolean(changes.verboseLogging.newValue);
+        global.CleanCommentsLog?.setVerbose(settings.verboseLogging);
+        log.info(`Verbose logging ${settings.verboseLogging ? "enabled" : "disabled"}`);
       }
 
       if (changes.moderationMode) {
@@ -535,11 +563,21 @@
   }
 
   async function init() {
+    log.info(`Initializing — AI-only mode (rule prefilter ${RULE_PREFILTER_ENABLED ? "ON" : "OFF"}, batch size ${AI_BATCH_SIZE})`);
     await loadSettings();
+    log.info("Settings loaded", {
+      moderationMode: settings.moderationMode,
+      showDebugBadges: settings.showDebugBadges,
+      customFilterWords: settings.customFilterWords.length,
+      enabledLabels: Object.entries(settings.labelSettings)
+        .filter(([, value]) => value.enabled !== false)
+        .map(([label]) => label)
+    });
     observeSettings();
     initializeStatus();
     scanComments();
     observeComments();
+    log.info("Observers attached; watching for comments");
   }
 
   void init();

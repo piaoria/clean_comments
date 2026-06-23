@@ -40,6 +40,9 @@ async function run() {
   assert.equal(classifyByRules("19\uAE08 \uC131\uC778 \uC601\uC0C1").label, "adult_bait");
   assert.equal(classifyByRules("you are stupid").label, "harassment");
 
+  // AI-only mode: a low-confidence harmful guess is not enough to filter, so the
+  // comment is left visible (safe) and stays attributed to the Prompt API rather
+  // than falling back to local rules.
   const lowConfidenceSandbox = createSandbox(JSON.stringify({
     label: "harassment",
     confidence: 0.2,
@@ -47,8 +50,8 @@ async function run() {
   }));
   const lowConfidenceResult = await lowConfidenceSandbox.CleanCommentsClassifier.classifyComment("normal comment");
   assert.equal(lowConfidenceResult.label, "safe");
-  assert.equal(lowConfidenceResult.source, "rules");
-  assert.match(lowConfidenceResult.reason, /low confidence Prompt API harassment/);
+  assert.equal(lowConfidenceResult.source, "prompt_api");
+  assert.match(lowConfidenceResult.reason, /low confidence harassment/);
 
   const highConfidenceSandbox = createSandbox(JSON.stringify({
     label: "harassment",
@@ -59,6 +62,8 @@ async function run() {
   assert.equal(highConfidenceResult.label, "harassment");
   assert.equal(highConfidenceResult.source, "prompt_api");
 
+  // AI-only mode: low-confidence harmful items become safe (still prompt_api),
+  // never local rules.
   const batchSandbox = createSandbox(JSON.stringify([
     { id: 0, label: "safe", confidence: 0.9, reason: "normal" },
     { id: 1, label: "spam", confidence: 0.91, reason: "promotion" },
@@ -70,8 +75,32 @@ async function run() {
     "normal again"
   ]);
   assert.equal(batchSandbox.getPromptCalls(), 1);
-  assert.deepEqual(batchResults.map((result) => result.source), ["prompt_api", "prompt_api", "rules"]);
+  assert.deepEqual(batchResults.map((result) => result.source), ["prompt_api", "prompt_api", "prompt_api"]);
   assert.deepEqual(batchResults.map((result) => result.label), ["safe", "spam", "safe"]);
+
+  // Out-of-order / partial AI responses are matched by id and missing entries
+  // default to safe instead of nuking the whole batch.
+  const tolerantSandbox = createSandbox(JSON.stringify([
+    { id: 2, label: "spam", confidence: 0.95, reason: "promotion" },
+    { id: 0, label: "safe", confidence: 0.9, reason: "normal" }
+  ]));
+  const tolerantResults = await tolerantSandbox.CleanCommentsClassifier.classifyCommentsBatch([
+    "normal comment",
+    "missing one",
+    "earn money free giveaway"
+  ]);
+  assert.deepEqual(tolerantResults.map((result) => result.label), ["safe", "safe", "spam"]);
+  assert.deepEqual(tolerantResults.map((result) => result.source), ["prompt_api", "prompt_api", "prompt_api"]);
+
+  // When the Prompt API is unavailable, AI-only mode leaves everything visible
+  // (safe) rather than filtering with local rules.
+  const unavailableSandbox = createSandbox();
+  const unavailableResults = await unavailableSandbox.CleanCommentsClassifier.classifyCommentsBatch([
+    "earn money free giveaway",
+    "19금 성인 영상"
+  ]);
+  assert.deepEqual(unavailableResults.map((result) => result.label), ["safe", "safe"]);
+  assert.deepEqual(unavailableResults.map((result) => result.source), ["ai_unavailable", "ai_unavailable"]);
 
   const popupSource = fs.readFileSync("popup/popup.js", "utf8");
   assert(!/[�]|湲\?|遺|諛|蹂묒|硫/.test(popupSource), "popup templates contain corrupted text");
