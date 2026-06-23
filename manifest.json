@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "clean_comments",
   "description": "Blur harmful YouTube comments using Chrome Built-in AI with a rule-based fallback.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "icons": {
     "16": "assets/icons/icon16.png",
     "32": "assets/icons/icon32.png",
@@ -24,6 +24,7 @@
     {
       "matches": ["https://www.youtube.com/*"],
       "js": [
+        "src/logger.js",
         "src/rules.js",
         "src/classifier.js",
         "src/content.js"

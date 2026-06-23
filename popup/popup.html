@@ -8,22 +8,26 @@
   </head>
   <body>
     <main class="popup">
-      <header>
-        <div>
+      <header class="app-header">
+        <div class="app-title">
           <h1>clean_comments</h1>
           <p data-i18n="appSubtitle"></p>
         </div>
+        <div class="ai-pill" id="aiPill" data-state="unknown" title="">
+          <span class="ai-dot" aria-hidden="true"></span>
+          <span class="ai-pill-text" id="aiPillText"></span>
+        </div>
       </header>
 
-      <nav class="tabs" data-i18n-aria="settingsSections">
-        <button type="button" class="tab-button" data-tab="general" data-i18n="tabGeneral" aria-selected="true"></button>
-        <button type="button" class="tab-button" data-tab="labels" data-i18n="tabLabels" aria-selected="false"></button>
-        <button type="button" class="tab-button" data-tab="words" data-i18n="tabWords" aria-selected="false"></button>
-        <button type="button" class="tab-button" data-tab="status" data-i18n="tabStatus" aria-selected="false"></button>
+      <nav class="tabs" role="tablist" data-i18n-aria="settingsSections">
+        <button type="button" class="tab-button" role="tab" data-tab="general" data-i18n="tabGeneral" aria-selected="true"></button>
+        <button type="button" class="tab-button" role="tab" data-tab="labels" data-i18n="tabLabels" aria-selected="false"></button>
+        <button type="button" class="tab-button" role="tab" data-tab="words" data-i18n="tabWords" aria-selected="false"></button>
+        <button type="button" class="tab-button" role="tab" data-tab="status" data-i18n="tabStatus" aria-selected="false"></button>
       </nav>
 
       <section class="tab-panel" data-panel="general">
-        <section class="panel">
+        <section class="card">
           <h2 data-i18n="defaultStyle"></h2>
           <div class="segmented" role="radiogroup" data-i18n-aria="defaultStyle">
             <label>
@@ -41,24 +45,34 @@
           </div>
         </section>
 
-        <label class="setting">
-          <span>
-            <strong data-i18n="debugBadge"></strong>
-            <small data-i18n="debugBadgeDescription"></small>
-          </span>
-          <input id="showDebugBadges" type="checkbox" role="switch">
-        </label>
+        <section class="card">
+          <label class="setting">
+            <span>
+              <strong data-i18n="debugBadge"></strong>
+              <small data-i18n="debugBadgeDescription"></small>
+            </span>
+            <input id="showDebugBadges" type="checkbox" role="switch">
+          </label>
+          <div class="setting-divider"></div>
+          <label class="setting">
+            <span>
+              <strong data-i18n="verboseLog"></strong>
+              <small data-i18n="verboseLogDescription"></small>
+            </span>
+            <input id="verboseLogging" type="checkbox" role="switch">
+          </label>
+        </section>
       </section>
 
       <section class="tab-panel" data-panel="labels" hidden>
-        <section class="panel">
+        <section class="card">
           <h2 data-i18n="labelBehavior"></h2>
           <div class="label-list" id="labelSettings"></div>
         </section>
       </section>
 
       <section class="tab-panel" data-panel="words" hidden>
-        <section class="panel">
+        <section class="card">
           <label class="textarea-label" for="customFilterWords">
             <strong data-i18n="customWords"></strong>
             <small data-i18n="customWordsDescription"></small>
@@ -75,20 +89,18 @@
 
       <section class="tab-panel" data-panel="status" hidden>
         <section class="status-dashboard" aria-live="polite">
-          <h2 data-i18n="statusDashboard"></h2>
-
           <div class="status-grid">
-            <div class="metric">
-              <span data-i18n="metricTotal"></span>
-              <strong id="totalStatus">0</strong>
+            <div class="metric metric-accent">
+              <span data-i18n="metricFiltered"></span>
+              <strong id="filteredStatus">0</strong>
             </div>
             <div class="metric">
               <span data-i18n="metricSafe"></span>
               <strong id="safeStatus">0</strong>
             </div>
             <div class="metric">
-              <span data-i18n="metricFiltered"></span>
-              <strong id="filteredStatus">0</strong>
+              <span data-i18n="metricTotal"></span>
+              <strong id="totalStatus">0</strong>
             </div>
             <div class="metric">
               <span data-i18n="metricPending"></span>
@@ -104,24 +116,24 @@
             </div>
           </div>
 
-          <section class="status-section">
-            <h3>AI</h3>
-            <p id="aiStatus"></p>
+          <section class="card status-section">
+            <h3 data-i18n="aiEngine"></h3>
+            <p id="aiStatus" class="status-line"></p>
           </section>
 
-          <section class="status-section">
+          <section class="card status-section">
             <h3 data-i18n="bySource"></h3>
             <div class="status-list" id="sourceStatus"></div>
           </section>
 
-          <section class="status-section">
+          <section class="card status-section">
             <h3 data-i18n="byLabel"></h3>
             <div class="status-list" id="labelStatus"></div>
           </section>
 
-          <section class="status-section">
+          <section class="card status-section">
             <h3 data-i18n="recent"></h3>
-            <p id="lastStatus"></p>
+            <p id="lastStatus" class="status-line"></p>
           </section>
         </section>
       </section>

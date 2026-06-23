@@ -2,7 +2,9 @@
 
 YouTube harmful comment filtering Chrome Extension.
 
-This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt API. When the Prompt API is unavailable, disabled, or returns an unusable result, the extension uses a local rule-based fallback classifier.
+This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt API.
+
+The extension currently runs in **AI-only mode**: every comment is judged by the Prompt API, and the local rule classifier is disabled for filtering. Comments the AI cannot judge (Prompt API unavailable, or a low-confidence harmful guess) are left visible instead of being filtered, to avoid catching innocent comments. The rule-based path is still in the codebase and can be re-enabled with `RULE_PREFILTER_ENABLED` in `src/content.js` and `RULES_FALLBACK_ENABLED` in `src/classifier.js`.
 
 ## Target Labels
 
@@ -17,19 +19,20 @@ This project is designed around Chrome Built-in AI, Gemini Nano, and the Prompt 
 
 - Runs as a Manifest V3 content-script extension on YouTube pages and processes comment threads when present.
 - Watches newly loaded YouTube comments and replies.
-- Classifies comment text with Chrome Built-in AI when possible.
-- Sends ambiguous AI-reviewed comments in small batches instead of one request per comment.
-- Falls back to rule-based filtering.
-- Falls back to local rules when Prompt API session creation or response generation times out.
-- Uses local rules instead of low-confidence harmful Prompt API results.
-- Applies user-defined custom word and phrase filters before rule or AI review.
+- Classifies comment text with Chrome Built-in AI (AI-only mode); the local rule classifier does not filter comments by default.
+- Sends comments to the AI in batches of up to 50 instead of one request per comment.
+- Leaves comments visible when the Prompt API is unavailable or times out, instead of filtering them with local rules.
+- Treats low-confidence harmful Prompt API results as safe so uncertain guesses do not hide innocent comments.
+- Tolerates out-of-order, partial, or unparseable AI batch responses by matching on id and defaulting missing items to safe.
+- Applies user-defined custom word and phrase filters before AI review.
 - Offers clickable starter templates for harassment, spam bait, and adult bait custom filters.
 - Filters harmful comments with a user-selected style: blur, blind, or dim.
 - Provides a tabbed popup with general settings, label-specific behavior, custom words, and live status.
 - Lets users enable or disable filtering per label and choose blur, blind, or dim per label.
-- Shows a popup status dashboard with processed, safe, filtered, pending, queue, batch, source, and label counts.
+- Shows a popup status dashboard with processed, safe, filtered, pending, queue, batch, source, and label counts, plus a header AI-status pill.
+- Logs the classification pipeline to the page console with a shared structured logger; a popup "verbose log" toggle enables detailed per-comment debug logs.
 - Keeps casual Korean reactions like repeated laughter or crying expressions out of the default meaningless filter.
-- Immediately filters high-confidence rule matches, while ambiguous comments stay visible during async AI review.
+- Keeps comments visible with a subtle checking marker during async AI review.
 - Provides a popup setting to show or hide debug badges next to filtered comments.
 - Shows Prompt API availability, AI/rule fallback counts, and last classification in the popup.
 - Separates filter sources as Prompt API, local rules, or user settings in debug/status output.
@@ -47,6 +50,7 @@ popup/
   popup.html
   popup.js
 src/
+  logger.js
   classifier.js
   content.js
   rules.js
@@ -72,7 +76,30 @@ Run the lightweight regression checks with:
 npm test
 ```
 
-The tests cover local rule labels, Korean reaction exceptions, low-confidence Prompt API fallback, high-confidence Prompt API results, batched Prompt API classification, and popup template encoding.
+The tests cover local rule labels, Korean reaction exceptions, AI-only handling of low-confidence harmful results, high-confidence Prompt API results, batched and tolerant Prompt API classification, the AI-unavailable safe path, and popup template encoding.
+
+## Debugging
+
+All pipeline events are logged to the **page console** (not the popup) with the `[clean_comments]` prefix.
+
+1. Open a YouTube video page with comments.
+2. Open DevTools (`F12`) and select the **Console** tab.
+3. Filter the console by `clean_comments` to see only this extension's logs.
+
+You will see, by default (info level):
+
+- Prompt API detection, availability, and session creation timing.
+- Gemini Nano model download progress, if a download is triggered.
+- Each batch: how many comments were sent, how long it took, and the resulting label counts.
+- Every filtered comment with its label, source, confidence, reason, and a text snippet.
+- Warnings when the AI is unavailable and comments are left visible.
+
+For more detail (per-comment "kept" logs, raw AI responses, batch input text), enable **verbose logging**:
+
+- Toggle **상세 로그 (Verbose log)** in the popup's 기본 (General) tab, or
+- Run `localStorage.setItem("cleanCommentsVerbose", "1")` in the page console and reload.
+
+To share logs for debugging, right-click in the console and use "Save as..." or copy the relevant `[clean_comments]` lines.
 
 ## Built-in AI Note
 

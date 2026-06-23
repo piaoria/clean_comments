@@ -12,6 +12,9 @@
     modeDim: "\uC57D\uD654",
     debugBadge: "\uB514\uBC84\uADF8 \uBC30\uC9C0",
     debugBadgeDescription: "\uB77C\uBCA8, \uCD9C\uCC98, \uC2E0\uB8B0\uB3C4, \uC774\uC720 \uD45C\uC2DC",
+    verboseLog: "\uC0C1\uC138 \uB85C\uADF8",
+    verboseLogDescription: "\uCF58\uC194\uC5D0 \uBD84\uB958 \uACFC\uC815\uC744 \uC790\uC138\uD788 \uAE30\uB85D (\uB514\uBC84\uADF8\uC6A9)",
+    aiEngine: "AI \uC5D4\uC9C4",
     labelBehavior: "\uB77C\uBCA8\uBCC4 \uB3D9\uC791",
     customWords: "\uC0AC\uC6A9\uC790 \uB2E8\uC5B4",
     customWordsDescription: "\uD55C \uC904\uC5D0 \uB2E8\uC5B4 \uB610\uB294 \uBB38\uAD6C \uD558\uB098\uC529 \uC785\uB825",
@@ -90,6 +93,7 @@
   });
   const DEFAULT_SETTINGS = Object.freeze({
     showDebugBadges: true,
+    verboseLogging: false,
     moderationMode: "blur",
     customFilterWords: [],
     labelSettings: DEFAULT_LABEL_SETTINGS
@@ -154,6 +158,9 @@
   });
 
   const debugToggle = document.getElementById("showDebugBadges");
+  const verboseToggle = document.getElementById("verboseLogging");
+  const aiPill = document.getElementById("aiPill");
+  const aiPillText = document.getElementById("aiPillText");
   const modeInputs = Array.from(document.querySelectorAll('input[name="moderationMode"]'));
   const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
   const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -232,6 +239,7 @@
     };
 
     debugToggle.checked = Boolean(currentSettings.showDebugBadges);
+    verboseToggle.checked = Boolean(currentSettings.verboseLogging);
     renderCustomWords(currentSettings.customFilterWords);
     renderLabelSettings(currentSettings.labelSettings);
 
@@ -242,6 +250,13 @@
   async function saveDebugSetting() {
     await chrome.storage.sync.set({
       showDebugBadges: debugToggle.checked
+    });
+  }
+
+  async function saveVerboseSetting() {
+    currentSettings.verboseLogging = verboseToggle.checked;
+    await chrome.storage.sync.set({
+      verboseLogging: verboseToggle.checked
     });
   }
 
@@ -370,14 +385,34 @@
 
   function describeAiStatus(classifier = {}) {
     if (!classifier.promptApiDetected) {
-      return TEXT.aiMissing;
+      return { state: "missing", short: TEXT.aiMissing, detail: TEXT.aiMissing };
     }
 
     if (classifier.promptApiSessionReady) {
-      return `${TEXT.aiReady} (${classifier.promptApiAvailability})`;
+      return {
+        state: "ok",
+        short: TEXT.aiReady,
+        detail: `${TEXT.aiReady} (${classifier.promptApiAvailability})`
+      };
     }
 
-    return `${TEXT.aiWaiting} (${classifier.promptApiAvailability || "unknown"})`;
+    const availability = classifier.promptApiAvailability || "unknown";
+    return {
+      state: "wait",
+      short: TEXT.aiWaiting,
+      detail: `${TEXT.aiWaiting} (${availability})`
+    };
+  }
+
+  function renderAiStatus(classifier = {}) {
+    const ai = describeAiStatus(classifier);
+    aiPill.dataset.state = ai.state;
+    aiPillText.textContent = ai.short;
+    aiPill.title = ai.detail;
+    if (classifier.promptApiLastError) {
+      aiPill.title = `${ai.detail}\n${classifier.promptApiLastError}`;
+    }
+    aiStatus.textContent = ai.detail;
   }
 
   function upsertStatusRows(container, rows) {
@@ -412,7 +447,7 @@
     batchStatus.textContent = currentBatchSize > 0
       ? `${batchesProcessed} / ${currentBatchSize}`
       : String(batchesProcessed);
-    aiStatus.textContent = describeAiStatus(status.classifier);
+    renderAiStatus(status.classifier);
 
     upsertStatusRows(sourceStatus, [
       [SOURCE_LABELS.prompt_api, Number(status.promptApiClassifications || 0)],
@@ -453,6 +488,10 @@
 
   debugToggle.addEventListener("change", () => {
     void saveDebugSetting();
+  });
+
+  verboseToggle.addEventListener("change", () => {
+    void saveVerboseSetting();
   });
 
   tabButtons.forEach((button) => {
